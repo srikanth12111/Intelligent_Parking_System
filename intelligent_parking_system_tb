@@ -1,0 +1,48 @@
+`timescale 1ns / 1ps 
+module intelligent_parking_tb; 
+reg clk, reset; 
+reg entry_request, exit_request; 
+reg [3:0] slot_sensors; // 4 parking slots (1 = occupied, 0 = free) 
+wire entry_gate, exit_gate; 
+wire [3:0] available_slots; 
+// Instantiate the Intelligent Parking System module 
+intelligent_parking_system uut ( 
+.clk(clk), 
+.reset(reset), 
+.entry_request(entry_request), 
+.exit_request(exit_request), 
+.slot_sensors(slot_sensors), 
+.entry_gate(entry_gate), 
+.exit_gate(exit_gate), 
+.available_slots(available_slots) 
+); 
+// Clock generation 
+always #5 clk = ~clk;  // Toggle clock every 5 time units (10ns period) 
+initial begin 
+// Initialize signals 
+clk = 0; 
+reset = 1; 
+entry_request = 0; 
+exit_request = 0; 
+slot_sensors = 4'b0000;  // All slots are free 
+#10 reset = 0;  // Deassert reset 
+// Case 1: A car requests entry and there is a free slot 
+#10 entry_request = 1; #10 entry_request = 0; 
+#10 slot_sensors = 4'b0001; // One slot occupied 
+// Case 2: Another car enters 
+#10 entry_request = 1; #10 entry_request = 0; 
+#10 slot_sensors = 4'b0011; // Two slots occupied 
+// Case 3: A car exits 
+#10 exit_request = 1; #10 exit_request = 0; 
+#10 slot_sensors = 4'b0001; // One slot occupied 
+// Case 4: All slots occupied, another car tries to enter 
+#10 slot_sensors = 4'b1111; // All slots full 
+#10 entry_request = 1; #10 entry_request = 0; 
+// Case 5: A car exits, freeing up a slot 
+#10 exit_request = 1; #10 exit_request = 0; 
+#10 slot_sensors = 4'b0111; // One slot freed 
+// Finish simulation 
+#50; 
+$stop; 
+end 
+endmodule
